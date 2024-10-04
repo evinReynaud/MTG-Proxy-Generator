@@ -7,7 +7,7 @@ const sampleDecklist = `Black Lotus
 4 Counterspell
 Shatterskull Smashing
 Jace, Vryn's Prodigy -checklist
-LEB/233 -code`;
+leb/233 -code`;
 
 function setState(stateFunction) {
   STATE = stateFunction(STATE);
