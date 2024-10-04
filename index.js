@@ -3,6 +3,12 @@ let STATE = {
   deckList : null
 }
 
+const sampleDecklist = `Black Lotus
+4 Counterspell
+Shatterskull Smashing
+Jace, Vryn's Prodigy -checklist
+LEB/233 -code`;
+
 function setState(stateFunction) {
   STATE = stateFunction(STATE);
   renderApplication(STATE);
@@ -95,7 +101,7 @@ function renderApplication(state) {
               STATE.deckList.push(myTempCard);
             }
           } else {
-            $(".js-results").prepend(`<div class="alert alert-danger alert-dismissible fade show col-12" role="alert">
+            $(".js-results").prepend(`<div class="alert alert-danger alert-dismissible fade d-print-none show col-12" role="alert">
               "${card.name}" could not be found. Try editing your list.
               <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
