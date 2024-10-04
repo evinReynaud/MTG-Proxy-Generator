@@ -114,7 +114,7 @@ function renderApplication(state) {
       }
         
       STATE.mode = MODES.REVIEW;
-      editReviewButtons();
+      editReviewPrintButtons();
     });
     
     $(".js-clear-button").click(function() {
@@ -437,8 +437,8 @@ function showReviewScreen() {
   $("footer").prop('hidden', true);
 }
 
-function editReviewButtons() {
-  $(".edit-review").html(`
+function editReviewPrintButtons() {
+  $(".edit-review-print").html(`
     <div class="btn-group btn-group-toggle" data-toggle="buttons" role="radiogroup" aria-label="navigate">
       <label class="btn btn-warning js-edit-button">
         <input type="radio" name="options" id="option1" autocomplete="off" aria-label="edit" checked> Edit
@@ -446,6 +446,10 @@ function editReviewButtons() {
       <label class="btn btn-info active js-review-button">
         <input type="radio" name="options" id="option3" autocomplete="off" aria-label="review" checked> Review
       </label>
+    </div>
+    
+    <div class="btn-group" aria-label="print-group">
+      <button class="btn btn-success js-print-button">Print</button>
     </div>
   `);
   
@@ -459,6 +463,10 @@ function editReviewButtons() {
     $().addClass("focus");
     $(".js-edit-button").removeClass("focus");
     showReviewScreen();
+  });
+
+  $(".js-print-button").click(function() {
+    window.print();
   });
 }
 

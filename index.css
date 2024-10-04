@@ -161,11 +161,6 @@ img.normal {
     right: 10px;
   }
 
-  button {
-    display: inline-block;
-    margin-top: 10px;
-  }
-
   img.normal {
     border-radius: 7px;
   }
