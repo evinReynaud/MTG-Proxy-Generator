@@ -350,48 +350,50 @@ function generateQueryList(userInputArr) {
   
   for(let i = 0; i < userInputArr.length; i++) {
     const query = {};
-    let currentItem = userInputArr[i]
-    //check quantity and store in query object:
-    query.quantity = checkQuantity(currentItem)
-    //remove quantity from currentItem
-    currentItem = currentItem.replace(/^([0-9]+)/g, '').trim();
-    //check for flags:
+    let currentItem = userInputArr[i].trim();
 
-    //check for 'checklist' flag
-    if (currentItem.includes('-cl')) {
-      query.layout = 'checklist';
-      currentItem = currentItem.replace('-cl', '').trim();
-    } else if (currentItem.includes('-checklist')) {
-      query.layout = 'checklist';
-      currentItem = currentItem.replace('-checklist', '').trim();
-    } else {
-      query.layout = 'normal'
-    }
+    if (currentItem !== "") {
+      // Get and remove quantity from currentItem
+      [query.quantity, currentItem] = getQuantityAndItem(currentItem)
 
-    // check for 'code' flag
-    if(currentItem.includes('-code')) {
-      currentItem = currentItem.replace('-code', '').trim()
-      query.queryEndpoint = 'code';
-    }
+      //check for flags:
 
-    if (currentItem.includes('-cd')) {
-      currentItem = currentItem.replace('-cd', '').trim()
-      query.queryEndpoint = 'code';
-    }
+      //check for 'checklist' flag
+      if (currentItem.includes('-cl')) {
+        query.layout = 'checklist';
+        currentItem = currentItem.replace('-cl', '').trim();
+      } else if (currentItem.includes('-checklist')) {
+        query.layout = 'checklist';
+        currentItem = currentItem.replace('-checklist', '').trim();
+      } else {
+        query.layout = 'normal'
+      }
 
-    // if the endpoint hasn't been assigned by a flag, it's a standard query
+      // check for 'code' flag
+      if (currentItem.includes('-code')) {
+        currentItem = currentItem.replace('-code', '').trim()
+        query.queryEndpoint = 'code';
+      }
 
-    if(!query.queryEndpoint) {
-      query.queryEndpoint = 'named'
+      if (currentItem.includes('-cd')) {
+        currentItem = currentItem.replace('-cd', '').trim()
+        query.queryEndpoint = 'code';
+      }
+
+      // if the endpoint hasn't been assigned by a flag, it's a standard query
+
+      if (!query.queryEndpoint) {
+        query.queryEndpoint = 'named'
+      }
+      if (query.queryEndpoint === 'code') {
+        query.query = currentItem.trim(); // Handles special cards better, for instance psal/E25/fr
+      } else {
+        query.query = currentItem.trim().toLowerCase();
+      }
+      console.log(`query #${i} before being pushed is: `, query)
+      queryList.push(query);
+      console.log(`queryList #${i} is: `, queryList[i])
     }
-    if (query.queryEndpoint === 'code') {
-      query.query = currentItem.trim(); // Handles special cards better, for instance psal/E25/fr
-    } else {
-      query.query = currentItem.trim().toLowerCase();
-    }
-    console.log(`query #${i} before being pushed is: `, query)
-    queryList.push(query);
-    console.log(`queryList #${i} is: `, queryList[i])
   }
   
   for(let i = 0; i < queryList.length; i++) {
@@ -413,12 +415,17 @@ function generateQueryList(userInputArr) {
   return queryList;
 }
 
-function checkQuantity(userQuery) {
-  userQuery = parseInt(userQuery);
-  if(isNaN(userQuery)) {
-    return 1;
+function getQuantityAndItem(line) {
+  const regexp = /^([0-9]+)\s+/;
+  const match = line.match(regexp);
+  if (match != null) {
+    let value = parseInt(match[1]);
+    if (isNaN(value)) {
+      value = 1;
+    }
+    return [value, line.replace(regexp, '').trim()];
   } else {
-    return userQuery;
+    return [1, line.trim()];
   }
 }
 
