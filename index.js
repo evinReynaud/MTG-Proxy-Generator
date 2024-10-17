@@ -7,7 +7,7 @@ const sampleDecklist = `Black Lotus
 4 Counterspell
 Shatterskull Smashing
 Jace, Vryn's Prodigy -checklist
-leb/233 -code`;
+leb/233`;
 
 function setState(stateFunction) {
   STATE = stateFunction(STATE);
@@ -59,7 +59,7 @@ function renderApplication(state) {
 
       for(let i=0; i < queryList.length; i++) {
         //query ScryFall for CURRENT card
-        setTimeout(getDataFromScryFall(queryList[i], function (data) {
+        setTimeout(() => getCard(queryList[i]).then(function (data) {
           const card = {}
 
           card.name = data.name;
@@ -349,50 +349,22 @@ function generateQueryList(userInputArr) {
   const queryList = [];
   
   for(let i = 0; i < userInputArr.length; i++) {
-    const query = {};
     let currentItem = userInputArr[i].trim();
 
     if (currentItem !== "") {
-      // Get and remove quantity from currentItem
-      [query.quantity, currentItem] = getQuantityAndItem(currentItem)
-
-      //check for flags:
+      // Parse line using magus-library
+      const parsedCard = parseMTGCardString(currentItem);
 
       //check for 'checklist' flag
-      if (currentItem.includes('-cl')) {
-        query.layout = 'checklist';
-        currentItem = currentItem.replace('-cl', '').trim();
-      } else if (currentItem.includes('-checklist')) {
-        query.layout = 'checklist';
-        currentItem = currentItem.replace('-checklist', '').trim();
+      if (parsedCard.customFlags.has('cl') || parsedCard.customFlags.has('checklist')) {
+        parsedCard.layout = 'checklist';
       } else {
-        query.layout = 'normal'
+        parsedCard.layout = 'normal';
       }
 
-      // check for 'code' flag
-      if (currentItem.includes('-code')) {
-        currentItem = currentItem.replace('-code', '').trim()
-        query.queryEndpoint = 'code';
-      }
-
-      if (currentItem.includes('-cd')) {
-        currentItem = currentItem.replace('-cd', '').trim()
-        query.queryEndpoint = 'code';
-      }
-
-      // if the endpoint hasn't been assigned by a flag, it's a standard query
-
-      if (!query.queryEndpoint) {
-        query.queryEndpoint = 'named'
-      }
-      if (query.queryEndpoint === 'code') {
-        query.query = currentItem.trim(); // Handles special cards better, for instance psal/E25/fr
-      } else {
-        query.query = currentItem.trim().toLowerCase();
-      }
-      console.log(`query #${i} before being pushed is: `, query)
-      queryList.push(query);
-      console.log(`queryList #${i} is: `, queryList[i])
+      console.log(`parsed card #${i} before being pushed is: `, parsedCard);
+      queryList.push(parsedCard);
+      console.log(`queryList #${i} is: `, queryList[i]);
     }
   }
   
@@ -404,7 +376,7 @@ function generateQueryList(userInputArr) {
       
       let nextCard = queryList[j];
       
-      while((j < queryList.length) && (currentCard.query === nextCard.query) && (currentCard.layout === nextCard.layout)) {
+      while((j < queryList.length) && (currentCard.name === nextCard.name) && (currentCard.layout === nextCard.layout)) {
         currentCard.quantity += nextCard.quantity;
         queryList.splice(j, 1);
         nextCard = queryList[j];
@@ -413,20 +385,6 @@ function generateQueryList(userInputArr) {
   }
   
   return queryList;
-}
-
-function getQuantityAndItem(line) {
-  const regexp = /^([0-9]+)\s+/;
-  const match = line.match(regexp);
-  if (match != null) {
-    let value = parseInt(match[1]);
-    if (isNaN(value)) {
-      value = 1;
-    }
-    return [value, line.replace(regexp, '').trim()];
-  } else {
-    return [1, line.trim()];
-  }
 }
 
 function showDisclaimer() {
