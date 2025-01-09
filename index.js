@@ -38,88 +38,8 @@ function renderApplication(state) {
     
     $(".js-generate-button").click(function(event) {
       event.preventDefault();
-      
-      if (!$.trim($(".js-queryList").val())) {
-        $(".js-queryList").val(sampleDecklist);
-      }
-      
-      $(".js-results").empty();
-      addProgressBar();
 
-      //generate a list of query...
-      let queryList = generateQueryList($(".js-queryList").val().split("\n"));
-      console.log('queryList is: ', queryList)
-      //set the loading counter for total queries
-      const totalRequests = queryList.length;
-
-      let completedRequests = 0;
-      showReviewScreen();
-
-      STATE.deckList = [];
-
-      const numberedQueryList = queryList.map((query, index) => {
-        query.displayOrder = index;
-        return query;
-      });
-
-      getCardsAndDo(numberedQueryList, (query, data) => {
-        const card = {}
-
-        card.name = data.name;
-        card.set = data.set_name;
-        card.displayOrder = query.displayOrder;
-        card.alternateImages = null;
-        card.editMode = false;
-        card.printsUri = data.prints_search_uri;
-        card.layout = query.layout
-
-        //update card images:
-        if (data.layout == 'transform' || data.layout == 'modal_dfc') {
-          card.cardImage = (data.card_faces[0].image_uris) ? data.card_faces[0].image_uris.border_crop : "";
-          card.cardImage2 = (data.card_faces[1].image_uris) ? data.card_faces[1].image_uris.border_crop : "";
-        } else {
-          if(card.layout === 'checklist') {
-            card.layout = 'normal';
-            $(".js-results").prepend(`<div class="alert alert-danger alert-dismissible fade show col-12" role="alert">
-              "${card.name}" cannot be made into a checklist card. Generating standard card instead.
-              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>`);
-          }
-          card.cardImage = (data.image_uris) ? data.image_uris.border_crop : "";
-        }
-
-        completedRequests++;
-        let percentageComplete = (completedRequests / totalRequests) * 100;
-
-        $(".progress-bar").css("width", `${percentageComplete}%`).attr("aria-valuenow", `${percentageComplete}`);
-
-        card.needsRerender = true;
-
-        if (card.cardImage !== "") {
-          //push the cards into the deckList:
-          for (let j = 0; j < query.quantity; j++) {
-            const myTempCard = $.extend(true, {}, card);
-            STATE.deckList.push(myTempCard);
-          }
-        } else {
-          $(".js-results").prepend(`<div class="alert alert-danger alert-dismissible fade d-print-none show col-12" role="alert">
-              "${card.name}" could not be found. Try editing your list.
-              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>`);
-        }
-
-        if (completedRequests === queryList.length) {
-          STATE.deckList = STATE.deckList.sort(function (card1, card2) {
-            return card1.displayOrder - card2.displayOrder;
-          });
-
-          renderApplication(STATE);
-        }
-      });
+      generateProxies();
 
       STATE.mode = MODES.REVIEW;
       editReviewPrintButtons();
@@ -152,6 +72,90 @@ function renderApplication(state) {
 ////////////////////////////////////////////////////////
 //  Utility Functions:
 ////////////////////////////////////////////////////////
+
+function generateProxies() {
+  if (!$.trim($(".js-queryList").val())) {
+    $(".js-queryList").val(sampleDecklist);
+  }
+
+  $(".js-results").empty();
+  addProgressBar();
+
+  //generate a list of query...
+  let queryList = generateQueryList($(".js-queryList").val().split("\n"));
+  console.log('queryList is: ', queryList)
+  //set the loading counter for total queries
+  const totalRequests = queryList.length;
+
+  let completedRequests = 0;
+  showReviewScreen();
+
+  STATE.deckList = [];
+
+  const numberedQueryList = queryList.map((query, index) => {
+    query.displayOrder = index;
+    return query;
+  });
+
+  getCardsAndDo(numberedQueryList, (query, data) => {
+    const card = {}
+
+    card.name = data.name;
+    card.set = data.set_name;
+    card.displayOrder = query.displayOrder;
+    card.alternateImages = null;
+    card.editMode = false;
+    card.printsUri = data.prints_search_uri;
+    card.layout = query.layout
+
+    //update card images:
+    if (data.layout == 'transform' || data.layout == 'modal_dfc') {
+      card.cardImage = (data.card_faces[0].image_uris) ? data.card_faces[0].image_uris.border_crop : "";
+      card.cardImage2 = (data.card_faces[1].image_uris) ? data.card_faces[1].image_uris.border_crop : "";
+    } else {
+      if(card.layout === 'checklist') {
+        card.layout = 'normal';
+        $(".js-results").prepend(`<div class="alert alert-danger alert-dismissible fade show col-12" role="alert">
+              "${card.name}" cannot be made into a checklist card. Generating standard card instead.
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>`);
+      }
+      card.cardImage = (data.image_uris) ? data.image_uris.border_crop : "";
+    }
+
+    completedRequests++;
+    let percentageComplete = (completedRequests / totalRequests) * 100;
+
+    $(".progress-bar").css("width", `${percentageComplete}%`).attr("aria-valuenow", `${percentageComplete}`);
+
+    card.needsRerender = true;
+
+    if (card.cardImage !== "") {
+      //push the cards into the deckList:
+      for (let j = 0; j < query.quantity; j++) {
+        const myTempCard = $.extend(true, {}, card);
+        STATE.deckList.push(myTempCard);
+      }
+    } else {
+      $(".js-results").prepend(`<div class="alert alert-danger alert-dismissible fade d-print-none show col-12" role="alert">
+              "${card.name}" could not be found. Try editing your list.
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>`);
+    }
+
+    if (completedRequests === queryList.length) {
+      STATE.deckList = STATE.deckList.sort(function (card1, card2) {
+        return card1.displayOrder - card2.displayOrder;
+      });
+
+      renderApplication(STATE);
+    }
+  });
+}
 
 function buildSpoiler(deckList) {
   
