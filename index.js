@@ -1,6 +1,7 @@
 let STATE = {
   mode : MODES.DISCLAIMER,
-  deckList : null
+  deckList : null,
+  customImages: []
 }
 
 const sampleDecklist = `Black Lotus
@@ -33,21 +34,48 @@ function renderApplication(state) {
 `Supported syntax:\n\n` + syntaxText);
     
     $(".js-queryList").placeholder();
-    
+
+    // Drop down handling
+    $(".js-drop-zone")
+      .on("dragbetterenter", function () {
+        $(this).addClass("drop-allowed");
+      })
+      .on("dragbetterleave", function () {
+        $(this).removeClass("drop-allowed");
+      })
+      .on("dragover", function (event) {
+        event.stopPropagation();
+        event.preventDefault();
+        return true;
+      })
+      .on("drop", function (event) {
+        event.stopPropagation();
+        event.preventDefault();
+
+        registerFiles(event.originalEvent.dataTransfer.files);
+      });
+
+    $("#image-input").on('change', function () {
+      registerFiles($("#image-input")[0].files);
+    });
+
     showEditScreen();
     
     $(".js-generate-button").click(function(event) {
       event.preventDefault();
 
-      generateProxies();
-
       STATE.mode = MODES.REVIEW;
+
+      generateProxies();
       editReviewPrintButtons();
     });
     
     $(".js-clear-button").click(function() {
       $(".js-queryList").val("");
       $(".js-queryList").scrollTop();
+
+      STATE.customImages.splice(0);
+      reloadAllPreviews();
     });
     
     $(".js-review-button").click(function() {
@@ -74,91 +102,117 @@ function renderApplication(state) {
 ////////////////////////////////////////////////////////
 
 function generateProxies() {
-  if (!$.trim($(".js-queryList").val())) {
+  if (!$.trim($(".js-queryList").val()) && STATE.customImages.length === 0) {
     $(".js-queryList").val(sampleDecklist);
   }
 
+  const inputQueryList = $.trim($(".js-queryList").val());
+
   $(".js-results").empty();
-  addProgressBar();
-
-  //generate a list of query...
-  let queryList = generateQueryList($(".js-queryList").val().split("\n"));
-  console.log('queryList is: ', queryList)
-  //set the loading counter for total queries
-  const totalRequests = queryList.length;
-
-  let completedRequests = 0;
-  showReviewScreen();
-
   STATE.deckList = [];
 
-  const numberedQueryList = queryList.map((query, index) => {
-    query.displayOrder = index;
-    return query;
-  });
+  //generate a list of query...
+  if (!!inputQueryList) {
+    addProgressBar();
 
-  getCardsAndDo(numberedQueryList, (query, data) => {
-    const card = {}
+    let queryList = generateQueryList(inputQueryList.split("\n"));
+    console.log('queryList is: ', queryList)
+    //set the loading counter for total queries
+    const totalRequests = queryList.length;
 
-    card.name = data.name;
-    card.set = data.set_name;
-    card.displayOrder = query.displayOrder;
-    card.alternateImages = null;
-    card.editMode = false;
-    card.printsUri = data.prints_search_uri;
-    card.layout = query.layout
+    let completedRequests = 0;
+    showReviewScreen();
 
-    //update card images:
-    if (data.layout == 'transform' || data.layout == 'modal_dfc') {
-      card.cardImage = (data.card_faces[0].image_uris) ? data.card_faces[0].image_uris.border_crop : "";
-      card.cardImage2 = (data.card_faces[1].image_uris) ? data.card_faces[1].image_uris.border_crop : "";
-    } else {
-      if(card.layout === 'checklist') {
-        card.layout = 'normal';
-        $(".js-results").prepend(`<div class="alert alert-danger alert-dismissible fade show col-12" role="alert">
+    const numberedQueryList = queryList.map((query, index) => {
+      query.displayOrder = index;
+      return query;
+    });
+
+    getCardsAndDo(numberedQueryList, (query, data) => {
+      const card = {}
+
+      card.name = data.name;
+      card.set = data.set_name;
+      card.displayOrder = query.displayOrder;
+      card.alternateImages = null;
+      card.editMode = false;
+      card.printsUri = data.prints_search_uri;
+      card.layout = query.layout
+      card.canBeEdited = true;
+
+      //update card images:
+      if (data.layout == 'transform' || data.layout == 'modal_dfc') {
+        card.cardImage = (data.card_faces[0].image_uris) ? data.card_faces[0].image_uris.border_crop : "";
+        card.cardImage2 = (data.card_faces[1].image_uris) ? data.card_faces[1].image_uris.border_crop : "";
+      } else {
+        if (card.layout === 'checklist') {
+          card.layout = 'normal';
+          $(".js-results").prepend(`<div class="alert alert-danger alert-dismissible fade show col-12" role="alert">
               "${card.name}" cannot be made into a checklist card. Generating standard card instead.
               <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
               </button>
             </div>`);
+        }
+        card.cardImage = (data.image_uris) ? data.image_uris.border_crop : "";
       }
-      card.cardImage = (data.image_uris) ? data.image_uris.border_crop : "";
-    }
 
-    completedRequests++;
-    let percentageComplete = (completedRequests / totalRequests) * 100;
+      completedRequests++;
+      let percentageComplete = (completedRequests / totalRequests) * 100;
 
-    $(".progress-bar").css("width", `${percentageComplete}%`).attr("aria-valuenow", `${percentageComplete}`);
+      $(".progress-bar").css("width", `${percentageComplete}%`).attr("aria-valuenow", `${percentageComplete}`);
 
-    card.needsRerender = true;
+      card.needsRerender = true;
 
-    if (card.cardImage !== "") {
-      //push the cards into the deckList:
-      for (let j = 0; j < query.quantity; j++) {
-        const myTempCard = $.extend(true, {}, card);
-        STATE.deckList.push(myTempCard);
-      }
-    } else {
-      $(".js-results").prepend(`<div class="alert alert-danger alert-dismissible fade d-print-none show col-12" role="alert">
+      if (card.cardImage !== "") {
+        //push the cards into the deckList:
+        for (let j = 0; j < query.quantity; j++) {
+          const myTempCard = $.extend(true, {}, card);
+          STATE.deckList.push(myTempCard);
+        }
+      } else {
+        $(".js-results").prepend(`<div class="alert alert-danger alert-dismissible fade d-print-none show col-12" role="alert">
               "${card.name}" could not be found. Try editing your list.
               <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
               </button>
             </div>`);
-    }
+      }
 
-    if (completedRequests === queryList.length) {
-      STATE.deckList = STATE.deckList.sort(function (card1, card2) {
-        return card1.displayOrder - card2.displayOrder;
-      });
+      if (completedRequests === queryList.length) {
+        STATE.deckList = STATE.deckList.sort(function (card1, card2) {
+          return card1.displayOrder - card2.displayOrder;
+        });
 
-      renderApplication(STATE);
+        addCustomImages(STATE.deckList);
+        renderApplication(STATE);
+      }
+    });
+  } else {
+    addCustomImages(STATE.deckList);
+    renderApplication(STATE);
+  }
+}
+
+function addCustomImages(decklist) {
+  STATE.customImages.forEach(customImage => {
+    const card = {};
+
+    card.name = customImage.filename;
+    card.editMode = false;
+    card.cardImage = customImage.fileData;
+    card.layout = 'normal';
+    card.canBeEdited = false;
+    card.needsRerender = true;
+
+    for (let i = 0; i < customImage.amount; i++) {
+      const tempCard = $.extend(true, {}, card);
+      decklist.push(tempCard);
     }
   });
 }
 
 function buildSpoiler(deckList) {
-  
   for(let i = 0; i < deckList.length; i++) {
     
     const card = deckList[i];
@@ -199,10 +253,13 @@ function buildSpoiler(deckList) {
         </div>`);
         // else make a single cardDiv for all other styles of cards
       } else {
+        const overlayContent = card.canBeEdited ?
+          `<button class="edit-button btn btn-outline-light btn-sm">Edit</button>` :
+          `<div class="custom-marker">Custom</div>`;
         $(".js-results").append(`
         <div class="card-div col-6 col-sm-4 col-md-3 col-lg-2" data-card="${card.name}-${i}">
           <div class="card-overlay d-print-none">
-            <button class="edit-button btn btn-outline-light btn-sm">Edit</button>
+            ${overlayContent}
           </div>
           <img>
         </div>`);
@@ -218,23 +275,25 @@ function buildSpoiler(deckList) {
     }
     
     if(card.needsRerender) {
-      // edit mode overlay
-      const cardOverlayHTML = `
-        <div class="card-overlay d-print-none ${(card.editMode) ? `edit-mode` : ""}">
+      if (card.canBeEdited) {
+        // edit mode overlay
+        const cardOverlayHTML = `
+          <div class="card-overlay d-print-none ${(card.editMode) ? `edit-mode` : ""}">
+  
+            ${(card.editMode) ? `<span class="set-name badge badge-dark">${card.set}</span>` : ""}
+  
+            ${(card.editMode) ? `<button class="done-button btn btn-outline-light btn-sm">Done</button>` : ""}
+            
+            ${(card.editMode) ? `<button class="prev-button btn btn-dark btn-sm"> < </button>` : ""}
+  
+            ${(card.editMode) ? `<span class="badge badge-dark image-counter"><span class="image-counter-current">${card.alternateImages.map(item => item.cardImage).indexOf(card.cardImage) + 1}</span> / <span class="image-counter-total">${card.alternateImages.length}</span></span>` : `<button class="edit-button btn btn-outline-light btn-sm">Edit</button>`}
+  
+            ${(card.editMode) ? `<button class="next-button btn btn-dark btn-sm"> > </button>` : ""}
+          </div>`;
 
-          ${(card.editMode) ? `<span class="set-name badge badge-dark">${card.set}</span>` : ""}
-
-          ${(card.editMode) ? `<button class="done-button btn btn-outline-light btn-sm">Done</button>` : ""}
-          
-          ${(card.editMode) ? `<button class="prev-button btn btn-dark btn-sm"> < </button>` : ""}
-
-          ${(card.editMode) ? `<span class="badge badge-dark image-counter"><span class="image-counter-current">${card.alternateImages.map(item => item.cardImage).indexOf(card.cardImage) + 1}</span> / <span class="image-counter-total">${card.alternateImages.length}</span></span>` : `<button class="edit-button btn btn-outline-light btn-sm">Edit</button>`}
-
-          ${(card.editMode) ? `<button class="next-button btn btn-dark btn-sm"> > </button>` : ""}
-        </div>`;
-      
-      //set html of layover in cardDiv
-      cardDiv1.find('.card-overlay').replaceWith(cardOverlayHTML);
+        //set html of layover in cardDiv
+        cardDiv1.find('.card-overlay').replaceWith(cardOverlayHTML);
+      }
 
       // add normal card face images
       if(card.layout === 'normal') {
@@ -455,6 +514,72 @@ function addProgressBar() {
       </div>
     </div>
   `);
+}
+
+////////////////////////////////////////////////////////
+//  File Upload Functions
+////////////////////////////////////////////////////////
+function registerFiles(files) {
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+
+    if (isImage(file)) {
+      const fileReader = new FileReader();
+      fileReader.onload = function () {
+        const customImageData = {
+          fileData: fileReader.result,
+          filename: file.name,
+          index: STATE.customImages.length,
+          amount: 1
+        }
+        addImagePreview(customImageData);
+        STATE.customImages.push(customImageData);
+      };
+      fileReader.readAsDataURL(file);
+    }
+  }
+}
+
+function isImage(file) {
+  return file.type && !!file.type.match('^image/');
+}
+
+function addImagePreview(customImageData) {
+  $(".js-custom-images-preview").append(`
+    <div class="custom-image-preview-container flex shrink">
+      <img src="${customImageData.fileData}" class="preview" alt="Custom image #${customImageData.index}">
+      <p class="filename">${customImageData.filename}</p>
+      <div class="btn btn-warning" onclick="decreasePreviewAmount(${customImageData.index})">-</div> <span class="amount" id="amount_${customImageData.index}">${customImageData.amount}</span> <div class="btn btn-success" onclick="increasePreviewAmount(${customImageData.index})">+</div>
+    </div>
+  `);
+}
+
+function decreasePreviewAmount(index) {
+  const image = STATE.customImages[index];
+  if (image.amount <= 1) {
+    STATE.customImages.splice(index, 1);
+    for (let i = index; i < STATE.customImages.length; i++) {
+      STATE.customImages[i].index -= 1;
+    }
+    reloadAllPreviews();
+  } else {
+    image.amount -= 1;
+    updateCustomImageAmountDisplay(index, image.amount);
+  }
+}
+
+function increasePreviewAmount(index) {
+  STATE.customImages[index].amount += 1;
+  updateCustomImageAmountDisplay(index, STATE.customImages[index].amount);
+}
+
+function updateCustomImageAmountDisplay(index, amount) {
+  $(`#amount_${index}`).html(amount);
+}
+
+function reloadAllPreviews() {
+  $(".js-custom-images-preview").html("");
+  STATE.customImages.forEach(addImagePreview);
 }
 
 $(function() {

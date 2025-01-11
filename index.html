@@ -13,8 +13,8 @@
     <link rel="stylesheet" href="print.css">
   </head>
 
-  <body class="text-center">
-    <header class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column" role="banner">
+  <body class="text-center flex column">
+    <header class="cover-container d-flex w-100 p-3 mx-auto flex-column flex shrink" role="banner">
       <nav class="navbar navbar-light bg-light d-print-none" role="navigation" style="background-color: #e3f2fd;">
         <a class="navbar-brand" href="index.html">
           <img class="home-icon" src="d10.svg" width="30" height="30" alt="A ten-sided die">MTG Proxy Generator</a>
@@ -22,7 +22,7 @@
       </nav>
     </header>
       
-    <main class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column" role="main">
+    <main class="cover-container w-100 p-3 mx-auto flex fill" role="main">
       <section class="disclaimer jumbotron" role="region">
         <h1 class="display-4">Print Proxy-Cards for Magic the Gathering</h1>
         <p class="lead">This APP allows you to print test-versions of cards for the ultra-popular trading card game, Magic the Gathering. Playtest cards you are interested in before purchasing or protect valuable originals you already own during casual use.</p>
@@ -31,13 +31,31 @@
       </section>
 
       <section class="js-input-section" role="region">
-        <form>
-          <fieldset>
-            <legend>Enter your decklist below:</legend>
-            <textarea class="js-queryList form-control centered" placeholder-x="" role="textbox" aria-label="decklist" spellcheck="false"></textarea>
-          </fieldset>
-          <button class="btn btn-primary js-generate-button centered" type="submit">Generate</button>
-          <button class="btn btn-danger js-clear-button centered" type="button">Clear</button>
+        <form class="flex column">
+          <div class="input-methods-wrapper flex fill grid grid-row gap">
+            <fieldset class="flex fill">
+              <legend>Enter your decklist below:</legend>
+              <textarea class="js-queryList form-control centered" placeholder-x="" role="textbox" aria-label="decklist"
+                        spellcheck="false"></textarea>
+            </fieldset>
+            <fieldset class="flex fill column gap">
+              <legend>Import custom cards:</legend>
+              <div class="js-drop-zone">
+                <p>Drag one or more files or</p>
+                <label class="btn btn-primary">
+                  Click here
+                  <input type="file" multiple accept="image/*" id="image-input">
+                </label>
+                <p>to import your custom cards.</p>
+              </div>
+              <div class="js-custom-images-preview flex flex-row gap wrap scrollable">
+              </div>
+            </fieldset>
+          </div>
+          <div class="flex shrink">
+            <button class="btn btn-primary js-generate-button centered" type="submit">Generate</button>
+            <button class="btn btn-danger js-clear-button centered" type="button">Clear</button>
+          </div>
         </form>
       </section>
 
@@ -46,7 +64,7 @@
 
     </main>
 
-    <footer class="mastfoot mt-auto" role="contentinfo">
+    <footer class="flex fill-all" role="contentinfo">
         <div class="inner">
           <p>Read about WoTC's official stance on proxies <a href="https://magic.wizards.com/en/articles/archive/news/proxies-policy-and-communication-2016-01-14" target="blank">here</a>. You may not use this site for profit in any way. All images are property of WoTC and/or their respecitive artist.</p>
         </div>
@@ -68,6 +86,7 @@
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js" integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/gh/evinreynaud/magus-library@0.0.6/dist/magus-library.js"></script>
   <script src="jquery.placeholder.js"></script>
+  <script src="jquery.dragbetter.js"></script>
   <script src="constants.js"></script>
   <script src="index.js"></script>
   </body>

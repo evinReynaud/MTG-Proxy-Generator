@@ -1,5 +1,62 @@
+html, body, form {
+  height: 100%;
+}
+
+.accept-terms {
+  margin-top: 15px;
+}
+
+footer {
+  margin-top: 20px;
+}
+
 form {
   margin: 0 auto;
+}
+
+.grid {
+  &.grid-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.flex {
+  &.flex-row {
+    display: flex;
+    flex-direction: row;
+  }
+
+  &.column {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &.gap {
+    gap: 10px;
+  }
+
+  &.wrap {
+    flex-wrap: wrap;
+  }
+
+  &.fill {
+    flex: auto;
+  }
+
+  &.fill-all{
+    flex: 100 0 auto;
+  }
+
+  &.scrollable {
+     flex: auto;
+     overflow: scroll;
+     height: 0; /* This seems to be needed for overflow to work properly */
+   }
+
+  &.shrink {
+    flex: initial;
+  }
 }
 
 .js-queryList {
@@ -32,6 +89,10 @@ form {
   margin-top: 15px;
 }
 
+.js-input-section {
+  height: 100%;
+}
+
 .js-edit-button:hover, .js-review-button:hover {
   cursor: pointer;
 }
@@ -46,6 +107,48 @@ ul {
 
 .centered {
   margin: 0 auto;
+}
+
+.js-drop-zone {
+  border: 2px dashed lightgray;
+  border-radius: 5px;
+  padding-top: 10px;
+
+  &.drop-allowed {
+    border-color: gray;
+    background-color: #eeeeee;
+  }
+
+  input[type=file] {
+    opacity: 0;
+    position: absolute;
+    z-index: -1;
+  }
+}
+
+.js-custom-images-preview {
+  height: 100%;
+  overflow: scroll;
+  justify-content: center;
+
+  .custom-image-preview-container {
+    .preview {
+      max-width: 145px;
+      max-height: 200px;
+    }
+
+    .filename {
+      margin: 8px auto;
+      padding: 0 8px;
+      max-width: 145px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      background-color: lightgray;
+      border-radius: 20px;
+    }
+  }
 }
 
 .js-generate-button, .js-clear-button {
@@ -88,6 +191,14 @@ img.normal {
   transform: rotate(270deg);
   left:35px;
   top: -35.5px;
+}
+
+.custom-marker {
+  border: 1px solid #f8f9fa;
+  border-radius: .2rem;
+  color: #f8f9fa;
+  padding: .25rem .5rem;
+  font-size: .875rem;
 }
 
 @media not print {
